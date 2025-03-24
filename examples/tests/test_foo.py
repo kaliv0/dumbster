@@ -1,3 +1,6 @@
+from examples.helper import Util
+
+
 class TestClass:
     VAR = 5
 
@@ -42,3 +45,6 @@ def test_5(Foo):
     nt = Foo("Bazz", 345)
     assert nt.name == "Bazz"
     assert nt.age == 345
+
+def test_6():
+    assert Util.get_num() + 3 == 45

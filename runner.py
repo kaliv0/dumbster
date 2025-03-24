@@ -1,25 +1,23 @@
 import os
 import sys
-import glob
 import inspect
 import threading
 import importlib.util
-from inspect import isfunction, ismethod, isclass
-
+from pathlib import Path
 
 failed_tests = 0
 
 def _import_from_path(file_):
-    module_name = ".py".split(os.path.basename(file_))[0]  # Path(path).stem ?!
+    module_name = file_.stem
     spec = importlib.util.spec_from_file_location(module_name, file_)
     module = importlib.util.module_from_spec(spec)
     sys.modules[module_name] = module
     spec.loader.exec_module(module)
     return module
 
-def _find_modules(dir_path, name):
-    glob_pattern = os.path.join(dir_path, f"tests/{name}")
-    return glob.glob(glob_pattern)
+def _find_modules(name):
+    return Path(os.getcwd()).glob( f"**/tests/{name}")
+
 
 def _get_functions(arg, predicate, pattern):
     return [obj for name, obj in inspect.getmembers(arg, predicate)
@@ -57,36 +55,34 @@ def _print_init_message(type_):
     print("###########################")
     print(f"Running {type_}-based tests")
 
+def _run_test(obj_, predicate, type_, config):
+    if methods := _get_functions(obj_, predicate, "test_"):
+        _print_init_message(type_)
+        _spawn_threads(methods, config)
+
 def _print_total():
     print("###########################")
     if failed_tests:
         print(f"{failed_tests} {"tests have" if failed_tests > 1 else "test has"} failed!")
     else:
         print("All tests passed successfully!")
-
-
-def main(path_):
-    dir_path = f"{os.path.dirname(path_)}*"
-    test_files = _find_modules(dir_path, "test_*.py")
+        
+def main():
+    test_files = _find_modules("test_*.py")
 
     config = None
-    if conf_file := _find_modules(dir_path, "conftest.py"):
-        config = _import_from_path(conf_file[0])
+    if conf_file := next(_find_modules("conftest.py"), None):
+        config = _import_from_path(conf_file)
 
     for t_file in test_files:
         test_obj = _import_from_path(t_file)
-        if funcs := _get_functions(test_obj, isfunction, "test_"):
-            _print_init_message("function")
-            _spawn_threads(funcs, config)
-
-        if classes := _get_functions(test_obj, isclass, "Test"):
+        if classes := _get_functions(test_obj, inspect.isclass, "Test"):
             for class_ in classes:
-                methods = _get_functions(class_(), ismethod, "test_")
-                _print_init_message("class")
-                _spawn_threads(methods, config)
+                _run_test(class_(), inspect.ismethod, "class", config)
+        _run_test(test_obj, inspect.isfunction, "function", config)
 
     _print_total()
 
 
 if __name__ == '__main__':
-    main(sys.argv[0])
+    main()
