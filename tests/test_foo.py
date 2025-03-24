@@ -12,7 +12,7 @@ class TestClass:
         assert self._static_helper(3, 4) == 8, "7 != 8"
 
     def test_k_4(self):
-        assert self._k_helper(6) == 11, "7 != 8"
+        assert self._k_helper(6) == 11
 
     @staticmethod
     def _static_helper(a, b):

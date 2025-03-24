@@ -1,13 +1,13 @@
-import glob
-import importlib
-import inspect
 import os
+import sys
+import glob
+import inspect
 import threading
+import importlib.util
 from inspect import isfunction, ismethod, isclass
 
-import importlib.util
-import sys
 
+failed_tests = 0
 
 def _import_from_path(file_):
     module_name = ".py".split(os.path.basename(file_))[0]  # Path(path).stem ?!
@@ -48,8 +48,21 @@ def _eval_test(func, config):
     except (AssertionError, BaseException) as e:
         print(f"\033[91m{func.__name__} failed: {str(e)}\033[00m")
         # traceback.print_exc()
+        global failed_tests
+        failed_tests += 1
     else:
         print(f"\033[92m{func.__name__} succeeded\033[00m")
+
+def _print_init_message(type_):
+    print("###########################")
+    print(f"Running {type_}-based tests")
+
+def _print_total():
+    print("###########################")
+    if failed_tests:
+        print(f"{failed_tests} {"tests have" if failed_tests > 1 else "test has"} failed!")
+    else:
+        print("All tests passed successfully!")
 
 
 def main(path_):
@@ -63,16 +76,16 @@ def main(path_):
     for t_file in test_files:
         test_obj = _import_from_path(t_file)
         if funcs := _get_functions(test_obj, isfunction, "test_"):
-            print("###########################")
-            print("Running function-based tests")
+            _print_init_message("function")
             _spawn_threads(funcs, config)
 
         if classes := _get_functions(test_obj, isclass, "Test"):
             for class_ in classes:
                 methods = _get_functions(class_(), ismethod, "test_")
-                print("###########################")
-                print("Running class-based tests")
+                _print_init_message("class")
                 _spawn_threads(methods, config)
+
+    _print_total()
 
 
 if __name__ == '__main__':

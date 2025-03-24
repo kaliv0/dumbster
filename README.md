@@ -4,3 +4,5 @@
 
 ---
 # dumpster
+
+Hopeless test runner for optimistic idiots
