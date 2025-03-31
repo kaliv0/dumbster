@@ -5,7 +5,11 @@ import threading
 import importlib.util
 from pathlib import Path
 
+CWD = os.getcwd()
+sys.path.append(CWD)
+
 failed_tests = 0
+successful_tests = 0
 
 def _import_from_path(file_):
     module_name = file_.stem
@@ -16,7 +20,7 @@ def _import_from_path(file_):
     return module
 
 def _find_modules(name):
-    return Path(os.getcwd()).glob( f"**/tests/{name}")
+    return Path(CWD).glob( f"**/tests/{name}")
 
 
 def _get_functions(arg, predicate, pattern):
@@ -50,6 +54,8 @@ def _eval_test(func, config):
         failed_tests += 1
     else:
         print(f"\033[92m{func.__name__} succeeded\033[00m")
+        global successful_tests
+        successful_tests += 1
 
 def _print_init_message(type_):
     print("###########################")
@@ -61,13 +67,16 @@ def _run_test(obj_, predicate, type_, config):
         _spawn_threads(methods, config)
 
 def _print_total():
-    print("###########################")
     if failed_tests:
+        print("###########################")
         print(f"{failed_tests} {"tests have" if failed_tests > 1 else "test has"} failed!")
+    elif successful_tests:
+        print("###########################")
+        print(f"{successful_tests} {"tests" if successful_tests > 1 else "test"} passed successfully!")
     else:
-        print("All tests passed successfully!")
+        print("No tests run!")
         
-def main():
+def run():
     test_files = _find_modules("test_*.py")
 
     config = None
@@ -85,4 +94,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    run()
