@@ -2,7 +2,7 @@
 name = "dumbster"
 version = "0.0.1"
 description = "Hopeless test runner for optimistic idiots"
-keywords = ["test runner", "trash bin", "joy"]
+keywords = ["test runner", "trash bin", "joystick"]
 readme = "README.md"
 license = {file = "LICENSE"}
 authors = [{ name = "Kaloyan Ivanov", email = "kaloyan.ivanov88@gmail.com" }]
