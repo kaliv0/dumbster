@@ -3,6 +3,6 @@
 </p>
 
 ---
-# dumpster
+# dumbster
 
-Hopeless test runner for optimistic idiots
+POC: Hopeless test runner for optimistic idiots
