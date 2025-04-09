@@ -10,7 +10,7 @@ authors = [{ name = "Kaloyan Ivanov", email = "kaloyan.ivanov88@gmail.com" }]
 requires-python = ">= 3.11"
 
 [project.scripts]
-dumb = "dumbster.__main__:run"
+dumb = "dumbster.runner:main"
 
 [tool.setuptools.packages.find]
 where = ["."]

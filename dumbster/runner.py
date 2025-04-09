@@ -1,12 +1,9 @@
-import os
 import sys
 import inspect
 import threading
 import importlib.util
 from pathlib import Path
 
-CWD = os.getcwd()
-sys.path.append(CWD)
 
 failed_tests = 0
 successful_tests = 0
@@ -19,8 +16,8 @@ def _import_from_path(file_):
     spec.loader.exec_module(module)
     return module
 
-def _find_modules(name):
-    return Path(CWD).glob( f"**/tests/{name}")
+def _find_modules(work_dir, name):
+    return Path(work_dir).glob( f"**/tests/{name}")
 
 
 def _get_functions(arg, predicate, pattern):
@@ -48,7 +45,7 @@ def _eval_test(func, config):
         else:
             func()
     except (AssertionError, BaseException) as e:
-        print(f"\033[91m{func.__name__} failed: {str(e)}\033[00m")
+        print(f"\033[91m{func.__name__} failed{f": {str(e)}" if str(e) else ""}\033[00m")
         # traceback.print_exc()
         global failed_tests
         failed_tests += 1
@@ -76,11 +73,18 @@ def _print_total():
     else:
         print("No tests run!")
         
-def run():
-    test_files = _find_modules("test_*.py")
+def main():
+    if len(sys.argv) < 2:
+        print("Working directory missing")
+        return
+
+    cwd = sys.argv[1]
+    sys.path.append(cwd)  # naughty...
+
+    test_files = _find_modules(cwd, "test_*.py")
 
     config = None
-    if conf_file := next(_find_modules("conftest.py"), None):
+    if conf_file := next(_find_modules(cwd, "conftest.py"), None):
         config = _import_from_path(conf_file)
 
     for t_file in test_files:
@@ -94,4 +98,4 @@ def run():
 
 
 if __name__ == '__main__':
-    run()
+    exit(main())

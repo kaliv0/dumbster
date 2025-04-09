@@ -12,7 +12,7 @@ class TestClass:
         assert isinstance(x, str)
 
     def test_k_3(self):
-        assert self._static_helper(3, 4) == 8, "7 != 8"
+        assert self._static_helper(3, 4) == 8
 
     def test_k_4(self):
         assert self._k_helper(6) == 11
