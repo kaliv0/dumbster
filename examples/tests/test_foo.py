@@ -24,27 +24,34 @@ class TestClass:
     def _k_helper(self, a):
         return a + self.VAR
 
+
 ##############################
 def test_1():
     assert 1 == 1
+
 
 def test_2():
     x = "abc"
     assert isinstance(x, str)
 
+
 def test_3():
     assert _helper(3, 4)
+
 
 def test_4():
     assert 2 == 3, "2 != 3"
 
+
 def _helper(a, b):
     return a + b
+
 
 def test_5(Foo):
     nt = Foo("Bazz", 345)
     assert nt.name == "Bazz"
     assert nt.age == 345
+
 
 def test_6():
     assert Util.get_num() + 3 == 45

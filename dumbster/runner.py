@@ -1,12 +1,14 @@
+import os
+import concurrent.futures
 import sys
 import inspect
-import threading
 import importlib.util
 from pathlib import Path
 
 
 failed_tests = 0
 successful_tests = 0
+
 
 def _import_from_path(file_):
     module_name = file_.stem
@@ -16,23 +18,24 @@ def _import_from_path(file_):
     spec.loader.exec_module(module)
     return module
 
+
 def _find_modules(work_dir, name):
-    return Path(work_dir).glob( f"**/tests/{name}")
+    return Path(work_dir).glob(f"**/{name}")
 
 
 def _get_functions(arg, predicate, pattern):
-    return [obj for name, obj in inspect.getmembers(arg, predicate)
-            if name.startswith(pattern)]
+    return [obj for name, obj in inspect.getmembers(arg, predicate) if name.startswith(pattern)]
+
 
 def _spawn_threads(funcs, config):
-    threads = []
-    for func in funcs:
-        func_thread = threading.Thread(target=_eval_test(func, config))
-        func_thread.start()
-        threads.append(func_thread)
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        tasks = []
+        for func in funcs:
+            tasks.append(executor.submit(_eval_test, func=func, config=config))
 
-    for func_thread in threads:
-        func_thread.join()
+        for task in concurrent.futures.as_completed(tasks):
+            print(task.result())
+
 
 def _eval_test(func, config):
     args = inspect.signature(func).parameters.keys()
@@ -45,42 +48,46 @@ def _eval_test(func, config):
         else:
             func()
     except (AssertionError, BaseException) as e:
-        print(f"\033[91m{func.__name__} failed{f": {str(e)}" if str(e) else ""}\033[00m")
-        # traceback.print_exc()
         global failed_tests
         failed_tests += 1
+        return f"\033[91m{func.__name__} failed{f': {str(e)}' if str(e) else ''}\033[00m"
     else:
-        print(f"\033[92m{func.__name__} succeeded\033[00m")
         global successful_tests
         successful_tests += 1
+        return f"\033[92m{func.__name__} succeeded\033[00m"
+
 
 def _print_init_message(type_):
     print("###########################")
     print(f"Running {type_}-based tests")
+
 
 def _run_test(obj_, predicate, type_, config):
     if methods := _get_functions(obj_, predicate, "test_"):
         _print_init_message(type_)
         _spawn_threads(methods, config)
 
+
 def _print_total():
     if failed_tests:
         print("###########################")
-        print(f"{failed_tests} {"tests have" if failed_tests > 1 else "test has"} failed!")
+        print(f"{failed_tests} {'tests have' if failed_tests > 1 else 'test has'} failed!")
     elif successful_tests:
         print("###########################")
-        print(f"{successful_tests} {"tests" if successful_tests > 1 else "test"} passed successfully!")
+        print(
+            f"{successful_tests} {'tests' if successful_tests > 1 else 'test'} passed successfully!"
+        )
     else:
         print("No tests run!")
-        
+
+
 def main():
     if len(sys.argv) < 2:
-        print("Working directory missing")
-        return
+        cwd = os.getcwd()
+    else:
+        cwd = sys.argv[1]
 
-    cwd = sys.argv[1]
-    sys.path.append(cwd)  # naughty...
-
+    sys.path.append(cwd)
     test_files = _find_modules(cwd, "test_*.py")
 
     config = None
@@ -97,5 +104,5 @@ def main():
     _print_total()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     exit(main())
